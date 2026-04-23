@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>共建邀请白名单管理 - 原型</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", sans-serif; background: #f0f2f5; color: #333; font-size: 14px; }
+
+  /* 顶部导航 */
+  .topbar { background: #001529; color: #fff; height: 48px; display: flex; align-items: center; padding: 0 24px; font-size: 16px; font-weight: 600; }
+  .topbar span { color: #1890ff; margin-left: 8px; }
+
+  /* 面包屑 */
+  .breadcrumb { padding: 12px 24px; color: #888; font-size: 13px; background: #fff; border-bottom: 1px solid #eee; }
+  .breadcrumb b { color: #333; }
+
+  /* 主内容区 */
+  .main { padding: 20px 24px; }
+
+  /* 卡片 */
+  .card { background: #fff; border-radius: 8px; padding: 20px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+  .card-title { font-size: 15px; font-weight: 600; margin-bottom: 16px; color: #222; border-left: 3px solid #1890ff; padding-left: 10px; }
+
+  /* 筛选区 */
+  .filter-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+  .filter-item { display: flex; flex-direction: column; gap: 4px; }
+  .filter-item label { font-size: 12px; color: #666; }
+  .filter-item input { height: 32px; border: 1px solid #d9d9d9; border-radius: 4px; padding: 0 10px; font-size: 13px; width: 180px; outline: none; transition: border .2s; }
+  .filter-item input:focus { border-color: #1890ff; box-shadow: 0 0 0 2px rgba(24,144,255,.1); }
+  .filter-btns { display: flex; gap: 8px; margin-left: 4px; }
+
+  /* 按钮 */
+  .btn { height: 32px; padding: 0 16px; border-radius: 4px; border: none; cursor: pointer; font-size: 13px; font-weight: 500; transition: all .2s; display: inline-flex; align-items: center; gap: 5px; }
+  .btn-primary { background: #1890ff; color: #fff; }
+  .btn-primary:hover { background: #40a9ff; }
+  .btn-default { background: #fff; color: #333; border: 1px solid #d9d9d9; }
+  .btn-default:hover { border-color: #1890ff; color: #1890ff; }
+  .btn-danger { background: #ff4d4f; color: #fff; }
+  .btn-danger:hover { background: #ff7875; }
+  .btn-warning { background: #faad14; color: #fff; }
+  .btn-warning:hover { background: #ffc53d; }
+  .btn-sm { height: 26px; padding: 0 10px; font-size: 12px; }
+  .btn-link { background: none; border: none; color: #1890ff; cursor: pointer; font-size: 13px; padding: 0 4px; }
+  .btn-link:hover { color: #40a9ff; }
+  .btn-link-danger { color: #ff4d4f; }
+  .btn-link-danger:hover { color: #ff7875; }
+
+  /* 操作栏 */
+  .action-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .action-left { display: flex; gap: 8px; }
+  .selected-tip { font-size: 13px; color: #888; }
+  .selected-tip b { color: #1890ff; }
+
+  /* 表格 */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  thead tr { background: #fafafa; }
+  th { padding: 10px 12px; text-align: left; font-size: 13px; color: #666; font-weight: 500; border-bottom: 1px solid #f0f0f0; white-space: nowrap; }
+  td { padding: 10px 12px; font-size: 13px; border-bottom: 1px solid #f0f0f0; }
+  tr:hover td { background: #f5f9ff; }
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 12px; font-weight: 500; }
+  .tag-on { background: #f6ffed; color: #52c41a; border: 1px solid #b7eb8f; }
+  .tag-off { background: #fff2f0; color: #ff4d4f; border: 1px solid #ffccc7; }
+  .ops { display: flex; gap: 4px; align-items: center; }
+  .divider { color: #d9d9d9; }
+  input[type=checkbox] { cursor: pointer; width: 15px; height: 15px; accent-color: #1890ff; }
+
+  /* 分页 */
+  .pagination { display: flex; justify-content: flex-end; align-items: center; margin-top: 16px; gap: 8px; font-size: 13px; color: #666; }
+  .page-btn { width: 30px; height: 30px; border: 1px solid #d9d9d9; border-radius: 4px; display: flex; align-items: center; justify-content: center; cursor: pointer; background: #fff; font-size: 13px; }
+  .page-btn.active { border-color: #1890ff; color: #1890ff; background: #e6f7ff; }
+  .page-btn:hover:not(.active) { border-color: #1890ff; color: #1890ff; }
+
+  /* 弹窗遮罩 */
+  .modal-mask { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,.45); z-index: 1000; justify-content: center; align-items: center; }
+  .modal-mask.show { display: flex; }
+
+  /* 弹窗主体 */
+  .modal { background: #fff; border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,.15); width: 520px; max-width: 96vw; overflow: hidden; animation: fadeIn .2s; }
+  .modal-lg { width: 660px; }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(-16px); } to { opacity:1; transform:none; } }
+  .modal-header { padding: 16px 20px; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; justify-content: space-between; }
+  .modal-header h3 { font-size: 15px; font-weight: 600; }
+  .modal-close { cursor: pointer; color: #999; font-size: 18px; line-height: 1; }
+  .modal-close:hover { color: #333; }
+  .modal-body { padding: 20px; }
+  .modal-footer { padding: 12px 20px; border-top: 1px solid #f0f0f0; display: flex; justify-content: flex-end; gap: 8px; }
+
+  /* 表单 */
+  .form-item { margin-bottom: 16px; }
+  .form-item:last-child { margin-bottom: 0; }
+  .form-label { font-size: 13px; color: #555; margin-bottom: 5px; display: flex; align-items: center; gap: 3px; }
+  .form-label .required { color: #ff4d4f; }
+  .form-input { width: 100%; height: 34px; border: 1px solid #d9d9d9; border-radius: 4px; padding: 0 10px; font-size: 13px; outline: none; transition: border .2s; }
+  .form-input:focus { border-color: #1890ff; box-shadow: 0 0 0 2px rgba(24,144,255,.1); }
+  .form-hint { font-size: 12px; color: #999; margin-top: 4px; }
+
+  /* 开关 */
+  .switch-group { display: flex; gap: 16px; }
+  .switch-option { display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px; color: #555; }
+  .switch-option input[type=radio] { accent-color: #1890ff; width: 14px; height: 14px; }
+
+  /* 确认弹窗 */
+  .confirm-icon { font-size: 40px; text-align: center; margin-bottom: 12px; }
+  .confirm-title { font-size: 16px; font-weight: 600; text-align: center; margin-bottom: 8px; }
+  .confirm-desc { font-size: 13px; color: #666; text-align: center; line-height: 1.8; }
+  .confirm-highlight { color: #ff4d4f; font-weight: 600; }
+
+  /* 上传区 */
+  .upload-area { border: 2px dashed #d9d9d9; border-radius: 6px; padding: 28px 20px; text-align: center; cursor: pointer; transition: border .2s; background: #fafafa; }
+  .upload-area:hover { border-color: #1890ff; background: #e6f7ff; }
+  .upload-icon { font-size: 36px; margin-bottom: 8px; }
+  .upload-text { font-size: 14px; color: #555; }
+  .upload-sub { font-size: 12px; color: #999; margin-top: 4px; }
+  .template-tip { margin-top: 12px; font-size: 13px; color: #666; }
+  .template-tip a { color: #1890ff; cursor: pointer; }
+
+  /* 批量移出页 */
+  .page-section { display: none; }
+  .page-section.active { display: block; }
+  .back-btn { display: inline-flex; align-items: center; gap: 6px; color: #1890ff; cursor: pointer; font-size: 14px; margin-bottom: 16px; }
+  .back-btn:hover { color: #40a9ff; }
+  textarea.form-textarea { width: 100%; height: 120px; border: 1px solid #d9d9d9; border-radius: 4px; padding: 10px; font-size: 13px; resize: vertical; outline: none; font-family: inherit; transition: border .2s; }
+  textarea.form-textarea:focus { border-color: #1890ff; box-shadow: 0 0 0 2px rgba(24,144,255,.1); }
+  .result-box { background: #f6ffed; border: 1px solid #b7eb8f; border-radius: 4px; padding: 12px 16px; font-size: 13px; color: #52c41a; margin-top: 12px; display: none; }
+  .result-box.show { display: block; }
+</style>
+</head>
+<body>
+
+<!-- 顶部导航 -->
+<div class="topbar">🐝 小蜜蜂运营后台 <span>/ 共建系统</span></div>
+<div class="breadcrumb">共建系统 / <b>共建邀请白名单管理</b></div>
+
+<!-- 主列表页 -->
+<div class="main page-section active" id="page-list">
+
+  <!-- 筛选区 -->
+  <div class="card">
+    <div class="card-title">筛选条件</div>
+    <div class="filter-row">
+      <div class="filter-item">
+        <label>用户 Passport</label>
+        <input type="text" placeholder="精确匹配" id="f-passport">
+      </div>
+      <div class="filter-item">
+        <label>共建分组 ID</label>
+        <input type="text" placeholder="精确匹配" id="f-group">
+      </div>
+      <div class="filter-item">
+        <label>目标 ID</label>
+        <input type="text" placeholder="精确匹配" id="f-target">
+      </div>
+      <div class="filter-item">
+        <label>客服群聊 ID</label>
+        <input type="text" placeholder="精确匹配" id="f-service">
+      </div>
+      <div class="filter-btns">
+        <button class="btn btn-primary">🔍 查询</button>
+        <button class="btn btn-default" onclick="clearFilter()">重置</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 列表 -->
+  <div class="card">
+    <div class="action-bar">
+      <div class="action-left">
+        <button class="btn btn-primary" onclick="openModal('modal-edit', 'new')">＋ 新增</button>
+        <button class="btn btn-default" onclick="openModal('modal-batch-add')">📤 批量添加</button>
+        <button class="btn btn-warning" onclick="showPage('page-batch-remove')">🗑 批量移出</button>
+      </div>
+      <div class="selected-tip">已选 <b id="selected-count">0</b> 条</div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th><input type="checkbox" id="check-all" onchange="toggleAll(this)"></th>
+            <th>用户 Passport</th>
+            <th>共建分组 ID</th>
+            <th>自动绑定目标 ID</th>
+            <th>客服群聊 ID</th>
+            <th>校园认证</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="table-body">
+          <tr>
+            <td><input type="checkbox" class="row-check" onchange="updateCount()"></td>
+            <td>zhangsan_01</td>
+            <td>GROUP_001</td>
+            <td>TARGET_88001</td>
+            <td>CHAT_CS_001</td>
+            <td><span class="tag tag-on">开启</span></td>
+            <td class="ops">
+              <button class="btn-link" onclick="openModal('modal-edit','edit','zhangsan_01','GROUP_001','TARGET_88001','CHAT_CS_001','on')">编辑</button>
+              <span class="divider">|</span>
+              <button class="btn-link btn-link-danger" onclick="openModal('modal-confirm','zhangsan_01')">移出</button>
+            </td>
+          </tr>
+          <tr>
+            <td><input type="checkbox" class="row-check" onchange="updateCount()"></td>
+            <td>lisi_campus</td>
+            <td>GROUP_002</td>
+            <td>TARGET_88002</td>
+            <td>CHAT_CS_002</td>
+            <td><span class="tag tag-on">开启</span></td>
+            <td class="ops">
+              <button class="btn-link" onclick="openModal('modal-edit','edit','lisi_campus','GROUP_002','TARGET_88002','CHAT_CS_002','on')">编辑</button>
+              <span class="divider">|</span>
+              <button class="btn-link btn-link-danger" onclick="openModal('modal-confirm','lisi_campus')">移出</button>
+            </td>
+          </tr>
+          <tr>
+            <td><input type="checkbox" class="row-check" onchange="updateCount()"></td>
+            <td>wangwu_pro</td>
+            <td>GROUP_001</td>
+            <td>TARGET_88003</td>
+            <td>CHAT_CS_001</td>
+            <td><span class="tag tag-off">关闭</span></td>
+            <td class="ops">
+              <button class="btn-link" onclick="openModal('modal-edit','edit','wangwu_pro','GROUP_001','TARGET_88003','CHAT_CS_001','off')">编辑</button>
+              <span class="divider">|</span>
+              <button class="btn-link btn-link-danger" onclick="openModal('modal-confirm','wangwu_pro')">移出</button>
+            </td>
+          </tr>
+          <tr>
+            <td><input type="checkbox" class="row-check" onchange="updateCount()"></td>
+            <td>zhaoliu_edu</td>
+            <td>GROUP_003</td>
+            <td>TARGET_88004</td>
+            <td>CHAT_CS_003</td>
+            <td><span class="tag tag-on">开启</span></td>
+            <td class="ops">
+              <button class="btn-link" onclick="openModal('modal-edit','edit','zhaoliu_edu','GROUP_003','TARGET_88004','CHAT_CS_003','on')">编辑</button>
+              <span class="divider">|</span>
+              <button class="btn-link btn-link-danger" onclick="openModal('modal-confirm','zhaoliu_edu')">移出</button>
+            </td>
+          </tr>
+          <tr>
+            <td><input type="checkbox" class="row-check" onchange="updateCount()"></td>
+            <td>sunqi_test</td>
+            <td>GROUP_002</td>
+            <td>TARGET_88005</td>
+            <td>CHAT_CS_002</td>
+            <td><span class="tag tag-off">关闭</span></td>
+            <td class="ops">
+              <button class="btn-link" onclick="openModal('modal-edit','edit','sunqi_test','GROUP_002','TARGET_88005','CHAT_CS_002','off')">编辑</button>
+              <span class="divider">|</span>
+              <button class="btn-link btn-link-danger" onclick="openModal('modal-confirm','sunqi_test')">移出</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="pagination">
+      <span>共 5 条</span>
+      <div class="page-btn">‹</div>
+      <div class="page-btn active">1</div>
+      <div class="page-btn">2</div>
+      <div class="page-btn">›</div>
+      <span>每页 20 条</span>
+    </div>
+  </div>
+</div>
+
+<!-- 批量移出页 -->
+<div class="main page-section" id="page-batch-remove">
+  <div class="back-btn" onclick="showPage('page-list')">← 返回列表</div>
+  <div class="card" style="max-width:600px;">
+    <div class="card-title">批量移出用户</div>
+    <div class="form-item">
+      <div class="form-label">输入用户 Passport <span class="required">*</span></div>
+      <textarea class="form-textarea" id="batch-remove-input" placeholder="输入用户 Passport，多个用英文逗号分隔&#10;例：zhangsan_01,lisi_campus,wangwu_pro"></textarea>
+      <div class="form-hint">⚠️ 移出操作不需要二次确认，提交后立即生效，请谨慎操作</div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:8px;">
+      <button class="btn btn-danger" onclick="doBatchRemove()">确认移出</button>
+      <button class="btn btn-default" onclick="showPage('page-list')">取消</button>
+    </div>
+    <div class="result-box" id="batch-remove-result"></div>
+  </div>
+</div>
+
+
+<!-- ===== 弹窗区域 ===== -->
+
+<!-- 新增/编辑弹窗 -->
+<div class="modal-mask" id="modal-edit">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-edit-title">新增白名单用户</h3>
+      <span class="modal-close" onclick="closeModal('modal-edit')">✕</span>
+    </div>
+    <div class="modal-body">
+      <div class="form-item">
+        <div class="form-label">用户 Passport <span class="required">*</span></div>
+        <input class="form-input" id="edit-passport" placeholder="请输入用户 Passport">
+      </div>
+      <div class="form-item">
+        <div class="form-label">共建分组 ID <span class="required">*</span></div>
+        <input class="form-input" id="edit-group" placeholder="请输入共建分组 ID">
+        <div class="form-hint">用户将被加入该分组进行共建</div>
+      </div>
+      <div class="form-item">
+        <div class="form-label">自动绑定目标 ID <span class="required">*</span></div>
+        <input class="form-input" id="edit-target" placeholder="请输入目标 ID">
+        <div class="form-hint">用户加入后自动绑定的目标对象</div>
+      </div>
+      <div class="form-item">
+        <div class="form-label">客服群聊 ID <span class="required">*</span></div>
+        <input class="form-input" id="edit-service" placeholder="请输入客服群聊 ID">
+      </div>
+      <div class="form-item">
+        <div class="form-label">是否需要校园认证 <span class="required">*</span></div>
+        <div class="switch-group">
+          <label class="switch-option">
+            <input type="radio" name="campus" id="campus-on" value="on" checked> 开启
+          </label>
+          <label class="switch-option">
+            <input type="radio" name="campus" id="campus-off" value="off"> 关闭
+          </label>
+        </div>
+        <div class="form-hint">开启后，用户需完成校园认证方可加入</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-default" onclick="closeModal('modal-edit')">取消</button>
+      <button class="btn btn-primary" onclick="submitEdit()">确认保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 移出二次确认弹窗 -->
+<div class="modal-mask" id="modal-confirm">
+  <div class="modal" style="width:420px;">
+    <div class="modal-header">
+      <h3>确认移出</h3>
+      <span class="modal-close" onclick="closeModal('modal-confirm')">✕</span>
+    </div>
+    <div class="modal-body">
+      <div class="confirm-icon">⚠️</div>
+      <div class="confirm-title">确认将该用户移出白名单？</div>
+      <div class="confirm-desc">
+        即将移出用户：<span class="confirm-highlight" id="confirm-passport">-</span><br>
+        移出后该用户将失去共建邀请资格，<br>
+        同时系统将自动向该用户发送<b>站内信通知</b>。<br><br>
+        此操作不可撤销，请确认后继续。
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-default" onclick="closeModal('modal-confirm')">取消</button>
+      <button class="btn btn-danger" onclick="doRemove()">确认移出</button>
+    </div>
+  </div>
+</div>
+
+<!-- 批量添加弹窗 -->
+<div class="modal-mask" id="modal-batch-add">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <h3>批量添加用户</h3>
+      <span class="modal-close" onclick="closeModal('modal-batch-add')">✕</span>
+    </div>
+    <div class="modal-body">
+      <div style="background:#fffbe6;border:1px solid #ffe58f;border-radius:4px;padding:12px 14px;margin-bottom:16px;font-size:13px;color:#856404;line-height:1.8;">
+        📋 <b>表格字段要求（每行一条用户记录）：</b><br>
+        A列：用户 Passport（必填）&nbsp;&nbsp;
+        B列：共建分组 ID（必填）&nbsp;&nbsp;
+        C列：自动绑定目标 ID（必填）<br>
+        D列：客服群聊 ID（必填）&nbsp;&nbsp;
+        E列：是否需要校园认证（必填，填写"开启"或"关闭"）
+      </div>
+      <div class="upload-area" onclick="triggerUpload()">
+        <div class="upload-icon">📂</div>
+        <div class="upload-text">点击或拖拽文件到此处上传</div>
+        <div class="upload-sub">支持 .xlsx / .xls / .csv 格式，单次最多 1000 条</div>
+        <input type="file" id="file-input" accept=".xlsx,.xls,.csv" style="display:none">
+      </div>
+      <div class="template-tip">
+        没有模板？<a onclick="alert('模板下载功能（对接后端接口）')">点击下载标准模板</a>
+      </div>
+      <!-- 上传预览（示意） -->
+      <div id="upload-preview" style="display:none;margin-top:14px;">
+        <div style="font-size:13px;color:#52c41a;font-weight:500;margin-bottom:8px;">✅ 文件解析成功，共 3 条记录</div>
+        <table style="width:100%;font-size:12px;border-collapse:collapse;">
+          <thead><tr style="background:#fafafa;">
+            <th style="padding:6px 8px;border:1px solid #f0f0f0;color:#666;">Passport</th>
+            <th style="padding:6px 8px;border:1px solid #f0f0f0;color:#666;">分组 ID</th>
+            <th style="padding:6px 8px;border:1px solid #f0f0f0;color:#666;">目标 ID</th>
+            <th style="padding:6px 8px;border:1px solid #f0f0f0;color:#666;">群聊 ID</th>
+            <th style="padding:6px 8px;border:1px solid #f0f0f0;color:#666;">校园认证</th>
+          </tr></thead>
+          <tbody>
+            <tr><td style="padding:6px 8px;border:1px solid #f0f0f0;">new_user_01</td><td style="padding:6px 8px;border:1px solid #f0f0f0;">GROUP_001</td><td style="padding:6px 8px;border:1px solid #f0f0f0;">TARGET_88010</td><td style="padding:6px 8px;border:1px solid #f0f0f0;">CHAT_CS_001</td><td style="padding:6px 8px;border:1px solid #f0f0f0;"><span class="tag tag-on">开启</span></td></tr>
+            <tr><td style="padding:6px 8px;border:1px solid #f0f0f0;">new_user_02</td><td style="padding:6px 8px;border:1px solid #f0f0f0;">GROUP_002</td><td style="padding:6px 8px;border:1px solid #f0f0f0;">TARGET_88011</td><td style="padding:6px 8px;border:1px solid #f0f0f0;">CHAT_CS_002</td><td style="padding:6px 8px;border:1px solid #f0f0f0;"><span class="tag tag-off">关闭</span></td></tr>
+            <tr><td style="padding:6px 8px;border:1px solid #f0f0f0;">new_user_03</td><td style="padding:6px 8px;border:1px solid #f0f0f0;">GROUP_001</td><td style="padding:6px 8px;border:1px solid #f0f0f0;">TARGET_88012</td><td style="padding:6px 8px;border:1px solid #f0f0f0;">CHAT_CS_003</td><td style="padding:6px 8px;border:1px solid #f0f0f0;"><span class="tag tag-on">开启</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-default" onclick="closeModal('modal-batch-add')">取消</button>
+      <button class="btn btn-primary" onclick="submitBatch()">确认导入</button>
+    </div>
+  </div>
+</div>
+
+
+<script>
+  function openModal(id, mode, passport, group, target, service, campus) {
+    if (id === 'modal-edit') {
+      document.getElementById('modal-edit-title').textContent = mode === 'new' ? '新增白名单用户' : '编辑白名单用户';
+      document.getElementById('edit-passport').value = passport || '';
+      document.getElementById('edit-passport').disabled = mode === 'edit'; // 编辑时 passport 不可改
+      document.getElementById('edit-passport').style.background = mode === 'edit' ? '#f5f5f5' : '';
+      document.getElementById('edit-group').value = group || '';
+      document.getElementById('edit-target').value = target || '';
+      document.getElementById('edit-service').value = service || '';
+      document.getElementById(campus === 'off' ? 'campus-off' : 'campus-on').checked = true;
+    }
+    if (id === 'modal-confirm') {
+      document.getElementById('confirm-passport').textContent = passport || '-';
+    }
+    document.getElementById(id).classList.add('show');
+  }
+
+  function closeModal(id) {
+    document.getElementById(id).classList.remove('show');
+    if (id === 'modal-batch-add') {
+      document.getElementById('upload-preview').style.display = 'none';
+      document.getElementById('file-input').value = '';
+    }
+  }
+
+  function submitEdit() {
+    const p = document.getElementById('edit-passport').value.trim();
+    const g = document.getElementById('edit-group').value.trim();
+    const t = document.getElementById('edit-target').value.trim();
+    const s = document.getElementById('edit-service').value.trim();
+    if (!p || !g || !t || !s) { alert('请填写所有必填项'); return; }
+    alert('✅ 保存成功（原型演示）');
+    closeModal('modal-edit');
+  }
+
+  function doRemove() {
+    alert('✅ 已移出，并发送站内信通知（原型演示）');
+    closeModal('modal-confirm');
+  }
+
+  function toggleAll(cb) {
+    document.querySelectorAll('.row-check').forEach(c => c.checked = cb.checked);
+    updateCount();
+  }
+
+  function updateCount() {
+    const n = document.querySelectorAll('.row-check:checked').length;
+    document.getElementById('selected-count').textContent = n;
+    document.getElementById('check-all').checked = n === document.querySelectorAll('.row-check').length;
+  }
+
+  function clearFilter() {
+    ['f-passport','f-group','f-target','f-service'].forEach(id => document.getElementById(id).value = '');
+  }
+
+  function showPage(id) {
+    document.querySelectorAll('.page-section').forEach(p => p.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    document.getElementById('batch-remove-result').classList.remove('show');
+    document.getElementById('batch-remove-input').value = '';
+  }
+
+  function doBatchRemove() {
+    const val = document.getElementById('batch-remove-input').value.trim();
+    if (!val) { alert('请输入至少一个 Passport'); return; }
+    const list = val.split(',').map(s => s.trim()).filter(Boolean);
+    const box = document.getElementById('batch-remove-result');
+    box.textContent = `✅ 已成功移出 ${list.length} 个用户：${list.join('、')}`;
+    box.classList.add('show');
+  }
+
+  function triggerUpload() {
+    document.getElementById('file-input').click();
+  }
+
+  document.getElementById('file-input').addEventListener('change', function() {
+    if (this.files.length > 0) {
+      document.getElementById('upload-preview').style.display = 'block';
+    }
+  });
+
+  function submitBatch() {
+    alert('✅ 批量导入成功，共新增 3 条记录（原型演示）');
+    closeModal('modal-batch-add');
+  }
+
+  // 点击遮罩关闭弹窗
+  document.querySelectorAll('.modal-mask').forEach(mask => {
+    mask.addEventListener('click', function(e) {
+      if (e.target === this) this.classList.remove('show');
+    });
+  });
+</script>
+</body>
+</html>
